@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кибер-Рандомайзер: Оператор ЭВМ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #131c31;
+            --accent-color: #00f2fe;
+            --accent-secondary: #4facfe;
+            --text-color: #ffffff;
+            --text-muted: #8a99ad;
+            --danger: #ff416c;
+            --success: #00b09b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--panel-bg);
+            border-bottom: 2px solid rgba(0, 242, 254, 0.2);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-area h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .logo-area p { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            color: var(--bg-color);
+            border: none; padding: 12px 24px; border-radius: 8px;
+            font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+            display: inline-flex; align-items: center; gap: 8px; font-size: 1.1rem;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text-color); border: 1px solid rgba(255,255,255,0.15); font-size: 0.9rem; padding: 8px 16px; font-family: 'Roboto', sans-serif; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); }
+        .btn-danger { background: var(--danger); color: white; font-family: 'Roboto', sans-serif; }
+
+        main {
+            flex: 1; padding: 30px; max-width: 1000px; margin: 0 auto; width: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
+        }
+
+        .randomizer-screen {
+            background: var(--panel-bg);
+            border: 2px solid var(--accent-color);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .slot-display {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: white;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .counter-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .question-card.active-glow {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--panel-bg); border: 1px solid rgba(0, 242, 254, 0.4);
+            border-radius: 16px; width: 90%; max-width: 750px; padding: 35px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7); position: relative; text-align: center;
+        }
+        .modal-title { font-family: 'Orbitron', sans-serif; color: var(--accent-color); font-size: 1.1rem; margin-bottom: 15px; text-transform: uppercase; }
+        .question-text { font-size: 1.5rem; line-height: 1.5; margin-bottom: 25px; font-weight: 700; }
+        
+        .answer-box {
+            background: rgba(0, 242, 254, 0.05); border: 1px dashed var(--accent-color);
+            border-radius: 10px; padding: 15px; margin-bottom: 25px; display: none; text-align: left;
+        }
+        .answer-box.revealed { display: block; }
+        
+        .close-modal { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+        .close-modal:hover { color: white; }
+
+        .editor-body { max-height: 55vh; overflow-y: auto; text-align: left; padding-right: 5px; margin-bottom: 20px; }
+        .q-row { display: grid; grid-template-columns: 50px 1fr 1fr 40px; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .q-row input[type="color"] { -webkit-appearance: none; border: none; width: 40px; height: 40px; border-radius: 6px; cursor: pointer; background: transparent; }
+        .q-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .q-row input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; }
+        .q-row input[type="text"] { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 10px; border-radius: 6px; font-size: 0.9rem; width: 100%; outline: none; }
+        .q-row input[type="text"]:focus { border-color: var(--accent-color); }
+
+        .author-tag {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <h1>Кибер-Рандомайзер</h1>
+            <p>Специальность «Оператор ЭВМ»</p>
+        </div>
+        <button class="btn btn-secondary" onclick="openEditor()"><i class="fa-solid fa-gear"></i> Редактор</button>
+    </header>
+
+    <main>
+        <div class="randomizer-screen" id="randomizerScreen">
+            <div class="counter-badge" id="counterBadge">Осталось: 10</div>
+            <div class="slot-display" id="slotDisplay">Нажмите запуск рандомайзера!</div>
+        </div>
+
+        <button class="btn" onclick="startRandomizer()"><i class="fa-solid fa-play"></i> Запустить рандомайзер</button>
+
+        <div style="width: 100%;">
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Активные вопросы в пуле:</div>
+            <div class="questions-grid" id="questionsGrid"></div>
+        </div>
+    </main>
+    
+    <div class="author-tag">Разработано: Сүйіндік Талант</div>
+
+    <!-- Модальное окно выпавшего вопроса -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+            <div class="modal-title"><i class="fa-solid fa-bolt"></i> Выпавший вопрос</div>
+            <div class="question-text" id="modalQuestionText">Вопрос...</div>
+            
+            <div class="answer-box" id="modalAnswerBox">
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">ПРАВИЛЬНЫЙ ОТВЕТ:</div>
+                <div id="modalAnswerText" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-secondary);">Ответ...</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" id="showAnsBtn" onclick="revealAnswer()"><i class="fa-solid fa-eye"></i> Показать ответ</button>
+                <div style="display: flex; gap: 10px;" id="actionButtons">
+                    <button class="btn btn-danger" onclick="removeCurrentQuestion()"><i class="fa-solid fa-trash"></i> Убрать вопрос</button>
+                    <button class="btn btn-secondary" onclick="closeModal()"><i class="fa-solid fa-check"></i> Оставить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактора -->
+    <div class="modal" id="editorModal">
+        <div class="modal-content" style="max-width: 850px;">
+            <button class="close-modal" onclick="closeEditor()">&times;</button>
+            <div class="modal-title"><i class="fa-solid fa-pen-to-square"></i> Редактор базы вопросов и цветов</div>
+            <div class="editor-body" id="editorBody"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <button class="btn btn-secondary" onclick="addQuestion()"><i class="fa-solid fa-plus"></i> Добавить вопрос</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeEditor()">Отмена</button>
+                    <button class="btn" onclick="saveEditorData()"><i class="fa-solid fa-floppy-disk"></i> Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // База из 10 вопросов (7 базовых + 3 дополнительных про запрещенные действия)
+        let gameData = JSON.parse(localStorage.getItem('randomizer_wheel_questions_v2')) || [
+            { q: "Что такое техника безопасности?", a: "Система организационных и технических мероприятий, предотвращающих воздействие опасных производственных факторов.", color: "#00f2fe" },
+            { q: "Ваши действия при обнаружении неисправности оборудования?", a: "Немедленно прекратить работу, отключить питание и сообщить преподавателю.", color: "#ff416c" },
+            { q: "Назовите одно действие, которое запрещено в этом кабинете. (не повторяясь)", a: "Запрещено принимать пищу, напитки и работать в верхней одежде/мокрыми руками.", color: "#f7b733" },
+            { q: "С чего начинается техника безопасности?", a: "С изучения инструкций, соблюдения правил и дисциплины.", color: "#00b09b" },
+            { q: "Какие действия необходимо сделать по окончании работы?", a: "Корректно завершить работу ОС, выключить ПК и привести в порядок рабочее место.", color: "#4facfe" },
+            { q: "Какое должно быть расстояние от глаз до монитора?", a: "Не менее 50–70 см (на расстоянии вытянутой руки).", color: "#7f00ff" },
+            { q: "Как часто нужно делать перерывы при длительной работе за компьютером?", a: "Каждые 45-60 минут работы рекомендуется делать перерыв на 10-15 минут для отдыха глаз.", color: "#fa709a" },
+            // 3 дополнительных вопроса с уникальными ответами
+            { q: "Назовите одно действие, которое запрещено в этом кабинете. (не повторяясь)", a: "Запрещено работать с электрооборудованием мокрыми руками или во влажной одежде.", color: "#eccc68" },
+            { q: "Назовите одно действие, которое запрещено в этом кабинете. (не повторяясь)", a: "Запрещено оставлять включенные компьютеры и оргтехнику без присмотра при уходе.", color: "#ff7f50" },
+            { q: "Назовите одно действие, которое запрещено в этом кабинете. (не повторяясь)", a: "Запрещено самостоятельно пытаться ремонтировать или разбирать системные блоки.", color: "#2ed573" }
+        ];
+
+        let selectedIndex = null;
+        let isSpinning = false;
+
+        function updateUI() {
+            document.getElementById('counterBadge').innerText = `Осталось: ${gameData.length}`;
+            const grid = document.getElementById('questionsGrid');
+            grid.innerHTML = '';
+
+            if (gameData.length === 0) {
+                grid.innerHTML = '<div style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 20px;">Все вопросы удалены! Добавьте новые через редактор.</div>';
+                return;
+            }
+
+            gameData.forEach((item, idx) => {
+                grid.innerHTML += `
+                    <div class="question-card" id="q-card-${idx}" style="border-color: ${item.color || '#00f2fe'}; color: ${item.color || '#00f2fe'};">
+                        <span>${item.q}</span>
+                    </div>
+                `;
+            });
+        }
+
+        window.onload = updateUI;
+
+        function startRandomizer() {
+            if (isSpinning) return;
+            if (gameData.length === 0) {
+                alert("Все вопросы закончились! Добавьте новые через редактор.");
+                return;
+            }
+
+            isSpinning = true;
+            const slot = document.getElementById('slotDisplay');
+            const screen = document.getElementById('randomizerScreen');
+            let counter = 0;
+            const totalSteps = 22;
+            let speed = 40;
+
+            function runSlot() {
+                document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active-glow'));
+
+                const randomIdx = Math.floor(Math.random() * gameData.length);
+                const tempItem = gameData[randomIdx];
+                
+                slot.innerText = tempItem.q;
+                slot.style.color = tempItem.color || "#00f2fe";
+                screen.style.borderColor = tempItem.color || "#00f2fe";
+                screen.style.boxShadow = `0 15px 40px ${tempItem.color}33`;
+
+                const activeCard = document.getElementById(`q-card-${randomIdx}`);
+                if (activeCard) activeCard.classList.add('active-glow');
+                
+                counter++;
+
+                if (counter < totalSteps) {
+                    speed += 12;
+                    setTimeout(runSlot, speed);
+                } else {
+                    selectedIndex = randomIdx;
+                    const finalItem = gameData[selectedIndex];
+                    
+                    slot.innerText = finalItem.q;
+                    slot.style.color = finalItem.color || "#00f2fe";
+                    screen.style.borderColor = finalItem.color || "#00f2fe";
+                    screen.style.boxShadow = `0 15px 40px ${finalItem.color}66`;
+
+                    isSpinning = false;
+                    openQuestionModal(finalItem);
+                }
+            }
+            runSlot();
+        }
+
+        function openQuestionModal(item) {
+            document.getElementById('modalQuestionText').innerText = item.q;
+            document.getElementById('modalQuestionText').style.color = item.color || "#ffffff";
+            document.getElementById('modalAnswerText').innerText = item.a;
+            
+            document.getElementById('modalAnswerBox').classList.remove('revealed');
+            document.getElementById('showAnsBtn').style.display = 'inline-flex';
+            document.getElementById('actionButtons').style.display = 'none';
+
+            document.getElementById('questionModal').classList.add('active');
+        }
+
+        function revealAnswer() {
+            document.getElementById('modalAnswerBox').classList.add('revealed');
+            document.getElementById('showAnsBtn').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('questionModal').classList.remove('active');
+            updateUI();
+        }
+
+        function removeCurrentQuestion() {
+            if (selectedIndex !== null && selectedIndex >= 0 && selectedIndex < gameData.length) {
+                gameData.splice(selectedIndex, 1);
+                localStorage.setItem('randomizer_wheel_questions_v2', JSON.stringify(gameData));
+                selectedIndex = null;
+                updateUI();
+            }
+            closeModal();
+        }
+
+        // Редактор
+        function openEditor() {
+            const body = document.getElementById('editorBody');
+            body.innerHTML = '';
+            
+            gameData.forEach((item, idx) => {
+                body.innerHTML += `
+                    <div class="q-row" data-index="${idx}">
+                        <input type="color" class="edit-color" value="${item.color || '#00f2fe'}">
+                        <input type="text" class="edit-q" value="${item.q.replace(/"/g, '&quot;')}" placeholder="Вопрос">
+                        <input type="text" class="edit-ans" value="${item.a.replace(/"/g, '&quot;')}" placeholder="Ответ">
+                        <button class="btn btn-secondary" style="padding: 8px; color: var(--danger);" onclick="deleteItem(${idx})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('editorModal').classList.add('active');
+        }
+
+        function closeEditor() {
+            document.getElementById('editorModal').classList.remove('active');
+        }
+
+        function addQuestion() {
+            gameData.push({ q: "Новый вопрос", a: "Новый ответ", color: "#3b82f6" });
+            openEditor();
+        }
+
+        function deleteItem(idx) {
+            gameData.splice(idx, 1);
+            openEditor();
+        }
+
+        function saveEditorData() {
+            const rows = document.querySelectorAll('#editorBody .q-row');
+            const newItems = [];
+
+            rows.forEach(row => {
+                const colorVal = row.querySelector('.edit-color').value;
+                const qVal = row.querySelector('.edit-q').value.trim();
+                const ansVal = row.querySelector('.edit-ans').value.trim();
+
+                if (qVal && ansVal) {
+                    newItems.push({ q: qVal, a: ansVal, color: colorVal });
+                }
+            });
+
+            if (newItems.length > 0) {
+                gameData = newItems;
+                localStorage.setItem('randomizer_wheel_questions_v2', JSON.stringify(gameData));
+                updateUI();
+            } else {
+                alert("Должен остаться хотя бы один вопрос!");
+                return;
+            }
+
+            closeEditor();
+        }
+    </script>
+</body>
+</html>
